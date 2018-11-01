@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>passage.js tests</title>
+  </head>
+  <body>
+    <div id="results">
+    </div>
+    <script type="text/javascript" src="passage.js">
+    </script>
+    <script type="text/javascript" src="tests.js">
+    </script>
+    <script type="text/javascript">
+      basicTests.onprogress = function(state){
+        document.getElementById('results').innerHTML = state.name + ': passed ' +
+        state.passed + ' of ' + state.total;
+      }
+
+      basicTests.run();
+    </script>
+  </body>
+</html>
