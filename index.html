@@ -13,6 +13,7 @@
     </script>
     <script type="text/javascript">
       basicTests.onprogress = function(state){
+        //console.log(state);
         document.getElementById('results').innerHTML = state.name + ': passed ' +
         state.passed + ' of ' + state.total;
       }

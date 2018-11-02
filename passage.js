@@ -24,6 +24,7 @@ function passage(name, params) {
 
   function run() {
     (lib.queue = lib.queue || []).push(suite);
+    suite.queued = true;
     if (lib.queue.length === 1) {
       this.start();
     }
@@ -64,9 +65,11 @@ function passage(name, params) {
     for (i = 0; i < timers.length; i++) {
       clearInterval(timers[i]);
     }
-    lib.queue.shift();
-    if (lib.queue.length) {
-      lib.queue[0].start();
+    if(suite.queued){
+      lib.queue.shift();
+      if (lib.queue.length) {
+        lib.queue[0].start();
+      }
     }
   }
 
