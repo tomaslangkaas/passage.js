@@ -15,28 +15,41 @@ basicTests.add('setTimeout(done)', function(done){
 
 basicTests.add('capture errors', function(done){
 
-  var tests = passage('errors');
-
-  tests.add('done("fail message")', function(done){
-    done("fail message");
-  });
-
-  tests.add('throw', function(done){
-    throw "fail message";
-  });
-
-  tests.add('throw async', function(done){
-    setTimeout(function(){
+  passage('errors')
+    .add('done("fail message")', function(done){
+      done("fail message");
+    })
+    .add('throw', function(done){
       throw "fail message";
-    }, 50);
-  });
+    })
+    .add('throw async', function(done){
+      setTimeout(function(){
+        throw "fail message";
+      }, 50);
+    })
+    .progress(function(state){
+      if(!state.running){
+        done(state.passed === 0);
+      }
+    })
+    .start();
 
-  tests.onprogress = function(state){
-    if(!state.running){
-      done(state.passed === 0);
-    }
-  };
+});
 
-  tests.start();
+basicTests.add('abort processing', function(done){
+
+  passage('abort', {abort:true})
+    .add('first failure', function(done){
+      done(false);
+    })
+    .add('should never run', function(done){
+      done();
+    })
+    .progress(function(state){
+      if(!state.running){
+        done(state.aborted);
+      }
+    })
+    .start();
 
 });

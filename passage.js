@@ -1,6 +1,7 @@
-function passage(name, params) {
-  params = params || {};
+function passage(name, param) {
+  
   var oldError,
+      params = param || {},
       lib = passage,
       tests = [],
       results = [],
@@ -15,14 +16,29 @@ function passage(name, params) {
         add: add,
         stop: stop,
         start: start,
-        onprogress: function() {}
+        results: results,
+        tests: tests,
+        total: 0,
+        onprogress: function() {},
+        progress: function(onprogress){
+          suite.onprogress = onprogress;
+          return this;
+        }
       };
 
   function add(name, test) {
-    tests.push([name, test]);
+    var index = tests.length;
+    if(typeof name === 'function'){
+      test = name;
+      name = '#' + index;
+    }
+    tests[index++] = [name, test];
+    suite.total = index;
+    return suite;
   }
 
-  function run() {
+  function run(param) {
+    params = param || params;
     (lib.queue = lib.queue || []).push(suite);
     suite.queued = true;
     if (lib.queue.length === 1) {
@@ -30,7 +46,8 @@ function passage(name, params) {
     }
   }
 
-  function start() {
+  function start(param) {
+    params = param || params;
     oldError = window.onerror;
     window.onerror = function(msg) {
       results[index] = msg;
@@ -46,17 +63,11 @@ function passage(name, params) {
   }
 
   function report(state) {
-    suite.onprogress({
-      name: suite.name,
-      index: index,
-      total: tests.length,
-      passed: passed,
-      failed: index - passed,
-      results: results,
-      tests: tests,
-      running: !state,
-      aborted: state && index < tests.length
-    });
+    suite.passed = passed;
+    suite.failed = index - passed;
+    suite.running = !state;
+    suite.aborted = state && index < tests.length;
+    suite.onprogress(suite);
   }
 
   function stop() {
@@ -75,7 +86,7 @@ function passage(name, params) {
 
   function next() {
     if (index === -1 || results[index] !== void 0) {
-      index++;
+      suite.index = ++index;
       report();
       if (
         index >= tests.length ||
@@ -88,45 +99,46 @@ function passage(name, params) {
             testResult === void 0 || testResult === true ?
             (passed++, true) :
             testResult;
-        }, assertEqual);
+        }, lib.equals);
       } else {
         throw "Missing test function";
       }
     }
   }
 
-  function assertEqual(a, b, priorA, priorB) {
-    var i = ""; // temp variable, default to empty string
-    if (a === b) return true; // true if same type/value or same object reference
-    if (typeof a !== typeof b) return false; // false if different types => falsy, 0 === [0], '' === []
-    if (typeof a !== "object") return a + i === b + i; // primitive values are compared as strings
-    if (a + i !== b + i) return false; // false if string representations of objects differ, [] === {}, {} === null
-    //check prior objects for circularity
-    if (!priorA) {
-      priorA = [];
-      priorB = [];
-    } else {
-      for (i = 0; i < priorA.length; i++) {
-        if (priorA[i] === a) return priorB[i] === b;
-        if (priorB[i] === b) return false; //priorA[i] !== a;
-      }
-    }
-    priorA.push(a);
-    priorB.push(b);
-    for (i in a) {
-      // check if a and b has same properties with same values, recursively
-      if (
-        a.hasOwnProperty(i) &&
-        (!b.hasOwnProperty(i) || !assertEqual(a[i], b[i], priorA,
-          priorB))
-      )
-        return false;
-    }
-    for (i in b) {
-      // check if b has additional properties
-      if (b.hasOwnProperty(i) && !a.hasOwnProperty(i)) return false;
-    }
-    return true;
-  }
   return suite;
+}
+
+passage.equals = function (a, b, priorA, priorB) {
+  var i = ""; // temp variable, default to empty string
+  if (a === b) return true; // true if same type/value or same object reference
+  if (typeof a !== typeof b) return false; // false if different types => falsy, 0 === [0], '' === []
+  if (typeof a !== "object") return a + i === b + i; // primitive values are compared as strings
+  if (a + i !== b + i) return false; // false if string representations of objects differ, [] === {}, {} === null
+  //check prior objects for circularity
+  if (!priorA) {
+    priorA = [];
+    priorB = [];
+  } else {
+    for (i = 0; i < priorA.length; i++) {
+      if (priorA[i] === a) return priorB[i] === b;
+      if (priorB[i] === b) return false; //priorA[i] !== a;
+    }
+  }
+  priorA.push(a);
+  priorB.push(b);
+  for (i in a) {
+    // check if a and b has same properties with same values, recursively
+    if (
+      a.hasOwnProperty(i) &&
+      (!b.hasOwnProperty(i) || !passage.equals(a[i], b[i], priorA,
+        priorB))
+    )
+      return false;
+  }
+  for (i in b) {
+    // check if b has additional properties
+    if (b.hasOwnProperty(i) && !a.hasOwnProperty(i)) return false;
+  }
+  return true;
 }
