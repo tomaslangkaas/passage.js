@@ -18,3 +18,5 @@ testSuite.run();
 
 >"Test suite #1: Passed 1 of 1"
 ```
+
+[Run tests](https://tomaslangkaas.github.io/passage.js/) online.
